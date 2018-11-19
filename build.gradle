@@ -1,0 +1,96 @@
+import java.time.OffsetDateTime
+
+buildscript {
+
+    repositories {
+        mavenLocal()
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+    }
+}
+allprojects {
+    apply plugin: 'maven'
+
+    group = 'my.company.service'
+    version = '0.0.1'
+}
+subprojects {
+    apply plugin: 'java'
+    sourceCompatibility = 8
+    targetCompatibility = 8
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+
+    apply plugin: 'jacoco'
+
+    jacoco {
+        toolVersion = "0.7.9"
+    }
+
+    def jacocoUnitTestFile = file("$buildDir/jacoco-ut.exec")
+    def jacocoIntegrationTestFile = file("$buildDir/jacoco-it.exec")
+
+    test {
+
+        jacoco {
+            append = false
+            destinationFile = jacocoUnitTestFile
+        }
+
+    }
+
+    tasks.withType(Test) {
+        useJUnitPlatform()
+    }
+
+    tasks.withType(War) + tasks.withType(Jar) {
+        doFirst {
+            // Attributes to show under /util/build
+            manifest {
+                attributes "Project-Name"          : project.name
+                attributes "Implementation-Version": project.version
+                attributes "Build-Time"            : OffsetDateTime.now().toString()
+                attributes "Built-By"              : System.getProperty("user.name")
+                attributes "Build-Jdk"             : System.getProperty('java.version')
+                attributes "Build-Using"           : "Gradle ${project.gradle.gradleVersion}"
+            }
+        }
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+
+    project.plugins.withType(WarPlugin) {
+        //Delete any war files which have been built for a different version or classifier
+        task deleteOldWars(type: Delete) {
+            delete fileTree(war.destinationDir) {
+                include "**/${war.baseName}*.${war.extension}"
+                exclude "**/${war.archiveName}"
+            }
+        }
+
+        war.dependsOn deleteOldWars
+    }
+
+    dependencies {
+        compile 'com.google.inject.extensions:guice-servlet:4.1.0'
+        compile 'org.immutables:value:2.7.3'
+        compile group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.0.1'
+        compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.9.7'
+
+        annotationProcessor 'org.immutables:value:2.7.3'
+
+        compile 'org.apache.logging.log4j:log4j-slf4j-impl:2.9.1'
+        compile 'org.reflections:reflections:0.9.11'
+        compile 'javax.xml.bind:jaxb-api:2.3.0'
+
+        compileOnly 'com.google.auto.service:auto-service:1.0-rc1'
+
+        runtime 'org.glassfish.jaxb:jaxb-runtime:2.3.0'
+    }
+}

@@ -1,0 +1,4 @@
+rootProject.name = 'field-filter'
+
+include ':api'
+include ':service'
