@@ -1,10 +1,12 @@
 package my.company.service.svc.filter;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.UriInfo;
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -18,11 +20,19 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.jaxrs.cfg.EndpointConfigBase;
 import com.fasterxml.jackson.jaxrs.cfg.ObjectWriterInjector;
 import com.fasterxml.jackson.jaxrs.cfg.ObjectWriterModifier;
@@ -53,16 +63,20 @@ public class FieldFilteringResponseFilter implements ContainerResponseFilter {
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext)
                     throws IOException {
 
-        MultivaluedMap<String, String> queryParams = requestContext.getUriInfo().getQueryParameters();
-        // parse out the fields
-        Set<String> fields = splitParams(queryParams.getFirst(FIELDS));
+        Set<String> fields = getFieldsFromRequest(requestContext.getUriInfo());
 
         // add the modifier
         FieldObjectModifier modifier = new FieldObjectModifier(fields, declaredFields, requestContext.getUriInfo().toString());
         ObjectWriterInjector.set(modifier);
     }
 
-    private  Set<String> splitParams(String paramValue) {
+    public static Set<String> getFieldsFromRequest(UriInfo uriInfo) {
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+        // parse out the fields
+        return splitParams(queryParams.getFirst(FIELDS));
+    }
+
+    private static  Set<String> splitParams(String paramValue) {
         final Iterable<String> values = Splitter.on(",")
             .trimResults()
             .omitEmptyStrings()
@@ -96,7 +110,7 @@ public class FieldFilteringResponseFilter implements ContainerResponseFilter {
         @Override
         public ObjectWriter modify(EndpointConfigBase<?> endpoint, MultivaluedMap<String, Object> responseHeaders, Object valueToWrite,
                         ObjectWriter objectWriter, JsonGenerator jsonGenerator) {
-            SimpleBeanPropertyFilter filter = null;
+            SimpleBeanPropertyFilter filter = getAllowAllFilter();
             if (valueToWrite != null && fields != null && !fields.isEmpty()) {
 
                 Set<String> availableFields = getClassInfo(valueToWrite.getClass());
@@ -114,11 +128,7 @@ public class FieldFilteringResponseFilter implements ContainerResponseFilter {
                     }
 
                     filter = new SimpleBeanPropertyFilter.FilterExceptFilter(knownFields);
-                } else {
-                    filter = getAllowAllFilter();
                 }
-            } else {
-                filter = getAllowAllFilter();
             }
             FilterProvider provider = new SimpleFilterProvider().addFilter(FIELD_FILTER, filter);
             return objectWriter.with(provider);

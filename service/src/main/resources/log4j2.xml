@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+    <Appenders>
+        <File name="File" fileName="${env:LOG_HOME}/logs/myservice.log">
+            <PatternLayout>
+                <Pattern>[%d{HH:mm:ss,SSS}][%X{X-Unique-ID}] [%p] %C{3}:%L - %m%n</Pattern>
+            </PatternLayout>
+        </File>
+    </Appenders>
+    <Logger name="org.glassfish.jersey" level="info" />
+    <Logger name="my.company.service" level="info" />
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="File"/>
+        </Root>
+    </Loggers>
+</Configuration>

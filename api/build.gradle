@@ -1,5 +1,8 @@
 description = ''
 
 dependencies {
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.7'
+    compile ('com.fasterxml.jackson.core:jackson-databind:2.9.7') {
+        exclude(module: 'jackson-annotations')
+    }
+    compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
 }

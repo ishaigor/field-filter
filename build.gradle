@@ -8,8 +8,15 @@ buildscript {
         mavenCentral()
     }
     dependencies {
+        classpath 'com.bmuschko:gradle-tomcat-plugin:2.5'
     }
 }
+plugins {
+    id "com.github.ben-manes.versions" version "0.20.0"
+}
+apply plugin: "com.github.ben-manes.versions"
+
+
 allprojects {
     apply plugin: 'maven'
 
@@ -78,19 +85,21 @@ subprojects {
     }
 
     dependencies {
-        compile 'com.google.inject.extensions:guice-servlet:4.1.0'
         compile 'org.immutables:value:2.7.3'
-        compile group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.0.1'
+        compile group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.1.1'
         compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.9.7'
 
         annotationProcessor 'org.immutables:value:2.7.3'
 
-        compile 'org.apache.logging.log4j:log4j-slf4j-impl:2.9.1'
-        compile 'org.reflections:reflections:0.9.11'
-        compile 'javax.xml.bind:jaxb-api:2.3.0'
+        compile 'org.apache.logging.log4j:log4j-slf4j-impl:2.11.1'
+        compile 'javax.xml.bind:jaxb-api:2.3.1'
 
-        compileOnly 'com.google.auto.service:auto-service:1.0-rc1'
+        runtime 'org.glassfish.jaxb:jaxb-runtime:2.3.1'
+    }
 
-        runtime 'org.glassfish.jaxb:jaxb-runtime:2.3.0'
+    configurations.all {
+        resolutionStrategy {
+            failOnVersionConflict()
+        }
     }
 }
