@@ -1,7 +1,7 @@
 package my.company.service.svc.filter;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
@@ -11,7 +11,6 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -20,19 +19,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.jaxrs.cfg.EndpointConfigBase;
 import com.fasterxml.jackson.jaxrs.cfg.ObjectWriterInjector;
 import com.fasterxml.jackson.jaxrs.cfg.ObjectWriterModifier;
@@ -41,11 +32,10 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import static my.company.service.api.model.Constants.FIELD_FILTER;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static my.company.service.api.model.Constants.FIELD_FILTER;
 
 @Singleton
 /**
@@ -60,14 +50,22 @@ public class FieldFilteringResponseFilter implements ContainerResponseFilter {
     private final Map<Class, Set<String>> declaredFields = new ConcurrentHashMap<>();
 
     @Override
-    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext)
-                    throws IOException {
+    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
 
         Set<String> fields = getFieldsFromRequest(requestContext.getUriInfo());
+
+        // TODO make fields mandatory
+        // validateFields(fields, "Fields query parameter has to be provided");
 
         // add the modifier
         FieldObjectModifier modifier = new FieldObjectModifier(fields, declaredFields, requestContext.getUriInfo().toString());
         ObjectWriterInjector.set(modifier);
+    }
+
+    private static void validateFields(Set<String> fields, String message) {
+        if (CollectionUtils.isEmpty(fields)) {
+            throw new BadRequestException(message);
+        }
     }
 
     public static Set<String> getFieldsFromRequest(UriInfo uriInfo) {
@@ -126,6 +124,9 @@ public class FieldFilteringResponseFilter implements ContainerResponseFilter {
                         fields.removeAll(knownFields);
                         LOGGER.error("Unknown fields {} requested for URI {}", fields, uri);
                     }
+
+                    // TODO make fields mandatory
+                    // validateFields(knownFields, "The fields specified are not supported.");
 
                     filter = new SimpleBeanPropertyFilter.FilterExceptFilter(knownFields);
                 }

@@ -22,17 +22,17 @@ public class JsonProvider extends JacksonJsonProvider {
     public JsonProvider() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setConfig(objectMapper.getSerializationConfig())
-                        .setConfig(objectMapper.getDeserializationConfig())
-                        .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-                        .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                        .configure(SerializationFeature.WRITE_DATES_WITH_ZONE_ID, true)
-                        .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE)
-                        .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
-                        .registerModule(new JavaTimeModule())
-                        .registerModule(new Jdk8Module())
-                        .registerModule(new GuavaModule())
-                        .findAndRegisterModules();
+            .setConfig(objectMapper.getDeserializationConfig())
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(SerializationFeature.WRITE_DATES_WITH_ZONE_ID, true)
+            .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE)
+            .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
+            .registerModule(new JavaTimeModule())
+            .registerModule(new Jdk8Module())
+            .registerModule(new GuavaModule())
+            .findAndRegisterModules();
         setMapper(objectMapper);
     }
 }
